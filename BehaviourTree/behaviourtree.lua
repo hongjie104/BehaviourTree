@@ -434,6 +434,7 @@ function LoopNode:Visit()
     if self.status ~= RUNNING then
         self.idx = 1
         self.rep = 0
+        self.status = RUNNING
     end
     
     local done = false
@@ -442,9 +443,9 @@ function LoopNode:Visit()
         local child = self.children[self.idx]
         child:Visit()
         if child.status == RUNNING or child.status == FAILED then
-            if child.status == FAILED then
-                --print("EXIT LOOP ON FAIL")
-            end
+            -- if child.status == FAILED then
+            --     --print("EXIT LOOP ON FAIL")
+            -- end
             self.status = child.status
             return
         end
@@ -483,38 +484,55 @@ end
 
 function RandomNode:Visit()
 
-    local done = false
+-- TODO bianchx:随机节点并不应该保证随机到的节点应该是Success
     
-    if self.status == READY then
-        --pick a new child
+    if not self.idx and self.children then
         self.idx = math.random(#self.children)
-        local start = inst.idx
-        while true do
-        
-            local child = self.children[self.idx]
-            child:Visit()
-            
-            if child.status ~= FAILED then
-                self.status = child.status
-                return
-            end
-            
-            self.idx = self.idx + 1
-            if self.idx == #self.children then
-                self.idx = 1
-            end
-            
-            if self.idx == start then
-                inst.status = FAILED
-                return
-            end
-        end
-        
-    else
+    end
+
+    if self.idx then
         local child = self.children[self.idx]
         child:Visit()
         self.status = child.status
+
+        if self.status ~= RUNNING then
+            self.idx = nil
+        end        
     end
+
+
+    -- local done = false
+    
+    -- if self.status == READY then
+    --     --pick a new child
+    --     self.idx = math.random(#self.children)
+    --     local start = self.idx
+    --     while true do
+        
+    --         local child = self.children[self.idx]
+    --         child:Visit()
+            
+    --         if child.status ~= FAILED then
+    --             self.status = child.status
+    --             return
+    --         end
+            
+    --         self.idx = self.idx + 1
+    --         if self.idx == #self.children then
+    --             self.idx = 1
+    --         end
+            
+    --         if self.idx == start then
+    --             self.status = FAILED
+    --             return
+    --         end
+    --     end
+        
+    -- else
+    --     local child = self.children[self.idx]
+    --     child:Visit()
+    --     self.status = child.status
+    -- end
     
 end
 
@@ -522,114 +540,116 @@ BT.RandomNode = RandomNode
 
 ---------------------------------------------------------------------------------------    
 
-local PriorityNode = class("PriorityNode", BehaviourNode, function(children, period)
-    local instance = BehaviourNode.__create(children)
-    instance.period = period or 1
-    return instance
-end)
+-- TODO bianchx:因为EventNode被注释掉了所以优先级节点暂时也不能用
 
-function PriorityNode:GetSleepTime()
-    if self.status == RUNNING then
+-- local PriorityNode = class("PriorityNode", BehaviourNode, function(children, period)
+--     local instance = BehaviourNode.__create(children)
+--     instance.period = period or 1
+--     return instance
+-- end)
+
+-- function PriorityNode:GetSleepTime()
+--     if self.status == RUNNING then
         
-        if not self.period then
-            return 0
-        end
+--         if not self.period then
+--             return 0
+--         end
         
         
-        local time_to = 0
-        if self.lasttime then
-            time_to = self.lasttime + self.period - BT.GetTime()
-            if time_to < 0 then
-                time_to = 0
-            end
-        end
+--         local time_to = 0
+--         if self.lasttime then
+--             time_to = self.lasttime + self.period - BT.GetTime()
+--             if time_to < 0 then
+--                 time_to = 0
+--             end
+--         end
     
-        return time_to
-    elseif self.status == READY then
-        return 0
-    end
+--         return time_to
+--     elseif self.status == READY then
+--         return 0
+--     end
     
-    return nil
+--     return nil
     
-end
+-- end
 
 
-function PriorityNode:DBString()
-    local time_till = 0
-    if self.period then
-       time_till = (self.lasttime or 0) + self.period - BT.GetTime()
-    end
+-- function PriorityNode:DBString()
+--     local time_till = 0
+--     if self.period then
+--        time_till = (self.lasttime or 0) + self.period - BT.GetTime()
+--     end
     
-    return string.format("execute %d, eval in %2.2f", self.idx or -1, time_till)
-end
+--     return string.format("execute %d, eval in %2.2f", self.idx or -1, time_till)
+-- end
 
 
-function PriorityNode:Reset()
-    self.super.Reset(self)
-    self.idx = nil
-end
+-- function PriorityNode:Reset()
+--     self.super.Reset(self)
+--     self.idx = nil
+-- end
 
-function PriorityNode:Visit()
+-- function PriorityNode:Visit()
     
-    local time = BT.GetTime()
-    local do_eval = not self.lasttime or not self.period or self.lasttime + self.period < time 
-    local oldidx = self.idx
+--     local time = BT.GetTime()
+--     local do_eval = not self.lasttime or not self.period or self.lasttime + self.period < time 
+--     local oldidx = self.idx
     
     
-    if do_eval then
+--     if do_eval then
         
-        local old_event = nil
-        -- if self.idx and self.children[self.idx]:is_a(EventNode) then
-        if self.idx and iskindof(self.children[self.idx], "EventNode") then
-            old_event = self.children[self.idx]
-        end
+--         local old_event = nil
+--         -- if self.idx and self.children[self.idx]:is_a(EventNode) then
+--         if self.idx and iskindof(self.children[self.idx], "EventNode") then
+--             old_event = self.children[self.idx]
+--         end
 
-        self.lasttime = time
-        local found = false
-        for idx, child in ipairs(self.children) do
+--         self.lasttime = time
+--         local found = false
+--         for idx, child in ipairs(self.children) do
         
-            -- local should_test_anyway = old_event and child:is_a(EventNode) and old_event.priority <= child.priority
-            local should_test_anyway = old_event and iskindof(child, "EventNode") and old_event.priority <= child.priority
-            if not found or should_test_anyway then
+--             -- local should_test_anyway = old_event and child:is_a(EventNode) and old_event.priority <= child.priority
+--             local should_test_anyway = old_event and iskindof(child, "EventNode") and old_event.priority <= child.priority
+--             if not found or should_test_anyway then
             
-                if child.status == FAILED or child.status == SUCCESS then
-                    child:Reset()
-                end
-                child:Visit()
-                local cs = child.status
-                if cs == SUCCESS or cs == RUNNING then
-                    if should_test_anyway and self.idx ~= idx then
-                        self.children[self.idx]:Reset()
-                    end
-                    self.status = cs
-                    found = true
-                    self.idx = idx
-                end
-            else
+--                 if child.status == FAILED or child.status == SUCCESS then
+--                     child:Reset()
+--                 end
+--                 child:Visit()
+--                 local cs = child.status
+--                 if cs == SUCCESS or cs == RUNNING then
+--                     if should_test_anyway and self.idx ~= idx then
+--                         self.children[self.idx]:Reset()
+--                     end
+--                     self.status = cs
+--                     found = true
+--                     self.idx = idx
+--                 end
+--             else
                 
-                child:Reset()
-            end
-        end
-        if not found then
-            self.status = FAILED
-        end
+--                 child:Reset()
+--             end
+--         end
+--         if not found then
+--             self.status = FAILED
+--         end
         
-    else
-        if self.idx then
-            local child = self.children[self.idx]
-            if child.status == RUNNING then
-                child:Visit()
-                self.status = child.status
-                if self.status ~= RUNNING then
-                    self.lasttime = nil
-                end
-            end
-        end
-    end
+--     else
+--         if self.idx then
+--             local child = self.children[self.idx]
+--             if child.status == RUNNING then
+--                 child:Visit()
+--                 self.status = child.status
+--                 if self.status ~= RUNNING then
+--                     self.lasttime = nil
+--                 end
+--             end
+--         end
+--     end
     
-end
+-- end
 
-BT.PriorityNode = PriorityNode
+-- BT.PriorityNode = PriorityNode
 
 ---------------------------------------------------------------------------------------
 
@@ -786,7 +806,7 @@ BT.ParallelNode = ParallelNode
 ---------------------------------------------------------------
 
 local WhileNode = class("WhileNode", ParallelNode, function(cond, node)
-    return ParallelNode.__create({ConditionNode.create(cond), node})
+    return ParallelNode.__create({ConditionNode:create(cond), node})
 end)
 
 BT.WhileNode = WhileNode
@@ -794,7 +814,7 @@ BT.WhileNode = WhileNode
 ---------------------------------------------------------------
 
 local IfNode = class("IfNode", SequenceNode, function(cond, node)
-    return SequenceNode.__create({ConditionNode.create(cond), node})
+    return SequenceNode.__create({ConditionNode:create(cond), node})
 end)
 
 BT.IfNode = IfNode
