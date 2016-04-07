@@ -501,4 +501,38 @@ assert(_time == _should_time, "BT.IfNode No Work")
 
 ----------------------------------------------------------------------------
 
+local node = BT.SequenceNode:create({
+	BT.ActionNode:create(function() print("this is a ActionNode") end),
+	BT.SelectorNode:create({
+		BT.IfNode:create(function_true, node_action_add1)
+	}),
+})
+
+testtype = "BT.BehaviourNode:SetOwner"
+print("Test Start\t" .. testtype)
+
+node:SetOwner(function_true_false_time)
+
+print("Test Ended \t" .. testtype .. "\n")
+
+function testSetOwner(btnode)
+	if not btnode then
+		return
+	end
+
+	assert(btnode.owner == function_true_false_time, "BT.BehaviourNode:SetOwner Not Work")
+
+	if btnode.children then
+		for k,v in pairs(btnode.children) do
+			testSetOwner(v)
+		end
+	end
+end
+
+testSetOwner(node)
+
+-- assert(_time == _should_time, "BT.BehaviourNode:SetOwner")
+
+----------------------------------------------------------------------------
+
 print "Test Finish"

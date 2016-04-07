@@ -17,6 +17,18 @@ local BehaviourTree = class("BehaviourTree", function(root)
     return instance
 end)
 
+function BehaviourTree:SetOwner(owner)
+    self.owner = owner
+
+    if self.root and self.root.SetOwner and type(self.root.SetOwner) then
+        self.root:SetOwner(owner)
+    end
+end
+
+function BehaviourTree:GetOwner()
+    return self.owner
+end
+
 function BehaviourTree:ForceUpdate()
     self.forceupdate = true
 end
@@ -61,6 +73,7 @@ local BehaviourNode = class("BehaviourNode", function(children)
     instance.children = children
     instance.status = READY
     instance.lastresult = READY
+    instance.owner = nil
     if children then
         for i,k in pairs(children) do
             k.parent = instance
@@ -69,6 +82,22 @@ local BehaviourNode = class("BehaviourNode", function(children)
 
     return instance
 end)
+
+function BehaviourNode:SetOwner(owner)
+    self.owner = owner
+
+    if self.children then
+        for k,v in pairs(self.children) do
+            if v and v.SetOwner and type(v.SetOwner) == "function" then
+                v:SetOwner(owner)
+            end
+        end
+    end
+end
+
+function BehaviourNode:GetOwner()
+    return self.owner
+end
 
 function BehaviourNode:DoToParents(fn)
     if self.parent then
