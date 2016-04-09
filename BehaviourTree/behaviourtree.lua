@@ -1,12 +1,36 @@
-SUCCESS = "SUCCESS"
-FAILED = "FAILED"
-READY = "READY"
-RUNNING = "RUNNING"
+local SUCCESS = "SUCCESS"
+local FAILED = "FAILED"
+local READY = "READY"
+local RUNNING = "RUNNING"
 
 local BT = {}
 
+BT.SUCCESS = SUCCESS
+BT.FAILED = FAILED
+BT.READY = READY
+BT.RUNNING = RUNNING
+
 BT.GetTime = function()
     return os.clock()
+end
+
+BT.iskindof = function(cls, name)
+    if cls.__cname == name then
+        return true
+    end
+
+    if not cls.__supers then
+        return false
+    end
+
+    for _,v in ipairs(cls.__supers) do
+        local bvalue = BT.iskindof(v, name)
+        if bvalue == true then
+            return true
+        end
+    end
+
+    return false
 end
 
 ---------------------------------------------------------------------------------------
@@ -128,7 +152,7 @@ end
 function BehaviourNode:GetSleepTime()
     
     -- if self.status == RUNNING and not self.children and not self:is_a(ConditionNode) then
-    if self.status == RUNNING and not self.children and not iskindof(self, "ConditionNode") then
+    if self.status == RUNNING and not self.children and not BT.iskindof(self, "ConditionNode") then
         if self.nextupdatetime then
             local time_to = self.nextupdatetime - BT.GetTime()
             if time_to < 0 then
@@ -629,7 +653,7 @@ BT.RandomNode = RandomNode
         
 --         local old_event = nil
 --         -- if self.idx and self.children[self.idx]:is_a(EventNode) then
---         if self.idx and iskindof(self.children[self.idx], "EventNode") then
+--         if self.idx and BT.iskindof(self.children[self.idx], "EventNode") then
 --             old_event = self.children[self.idx]
 --         end
 
@@ -638,7 +662,7 @@ BT.RandomNode = RandomNode
 --         for idx, child in ipairs(self.children) do
         
 --             -- local should_test_anyway = old_event and child:is_a(EventNode) and old_event.priority <= child.priority
---             local should_test_anyway = old_event and iskindof(child, "EventNode") and old_event.priority <= child.priority
+--             local should_test_anyway = old_event and BT.iskindof(child, "EventNode") and old_event.priority <= child.priority
 --             if not found or should_test_anyway then
             
 --                 if child.status == FAILED or child.status == SUCCESS then
@@ -692,7 +716,7 @@ function ParallelNode:Step()
     elseif self.children then
         for k, v in ipairs(self.children) do
             -- if v.status == SUCCESS and v:is_a(ConditionNode) then
-            if v.status == SUCCESS and iskindof(v, "ConditionNode") then
+            if v.status == SUCCESS and BT.iskindof(v, "ConditionNode") then
                 v:Reset()
             end         
         end
@@ -705,7 +729,7 @@ function ParallelNode:Visit()
     for idx, child in ipairs(self.children) do
         
         -- if child:is_a(ConditionNode) then
-        if iskindof(child, "ConditionNode") then
+        if BT.iskindof(child, "ConditionNode") then
             child:Reset()
         end
         
@@ -796,7 +820,7 @@ BT.ParallelNode = ParallelNode
 --     end
     
 --     -- self:DoToParents(function(node) if node:is_a(PriorityNode) then node.lasttime = nil end end)
---     self:DoToParents(function(node) if iskindof(node, "PriorityNode") then node.lasttime = nil end end)
+--     self:DoToParents(function(node) if BT.iskindof(node, "PriorityNode") then node.lasttime = nil end end)
     
 --     --wake the parent!
 -- end

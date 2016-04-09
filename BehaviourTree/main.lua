@@ -1,6 +1,11 @@
 require("func")
 local BT = require("behaviourtree")
 
+SUCCESS = BT.SUCCESS
+FAILED = BT.FAILED
+READY = BT.READY
+RUNNING = BT.RUNNING
+
 local data = {}
 
 local _time = 0
@@ -57,10 +62,22 @@ local start = os.clock()
 
 local testtype = ""
 
+
+print("")
+
+----------------------------------------------------------------------------
+
+testtype = "BT.iskindof"
+
+print("Test Start\t" .. testtype)
+assert(BT.iskindof(BT.NotDecorator, "BehaviourNode"), "BT.NotDecorator >> BehaviourNode Should be true")
+assert(not BT.iskindof(BT.NotDecorator, "BehaviourTree"), "BT.NotDecorator >> BehaviourTree Should be false")
+assert(BT.iskindof(BT.NotDecorator, "DecoratorNode"), "BT.NotDecorator >> DecoratorNode Should be true")
+print("Test Ended \t" .. testtype .. "\n")
+
 ----------------------------------------------------------------------------
 
 testtype = "BT.BehaviourTree & BT.ActionNode"
-print("")
 print("Test Start\t" .. testtype)
 test.bt:Update()
 print("Test Ended \t" .. testtype .. "\n")
