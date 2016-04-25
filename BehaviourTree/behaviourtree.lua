@@ -351,7 +351,16 @@ end
 
 function SequenceNode:Reset()
     -- self._base.Reset(self)
-    self.super.Reset(self)
+    -- self.super.Reset(self)
+
+    if self.status ~= READY then
+        self.status = READY
+        if self.children then
+            for idx, child in ipairs(self.children) do
+                child:Reset()
+            end
+        end
+    end
     self.idx = 1
 end
 
@@ -394,7 +403,16 @@ end
 
 function SelectorNode:Reset()
     -- self._base.Reset(self)
-    self.super.Reset(self)
+    -- self.super.Reset(self)
+    
+    if self.status ~= READY then
+        self.status = READY
+        if self.children then
+            for idx, child in ipairs(self.children) do
+                child:Reset()
+            end
+        end
+    end
     self.idx = 1
 end
 
@@ -429,15 +447,15 @@ local NotDecorator = class("NotDecorator", DecoratorNode, function(child)
 end)
 
 function NotDecorator:Visit()
-	local child = self.children[1]
-	child:Visit()
-	if child.status == SUCCESS then
-		self.status = FAILED
-	elseif child.status == FAILED then
-		self.status = SUCCESS
-	else
-		self.status = child.status
-	end
+    local child = self.children[1]
+    child:Visit()
+    if child.status == SUCCESS then
+        self.status = FAILED
+    elseif child.status == FAILED then
+        self.status = SUCCESS
+    else
+        self.status = child.status
+    end
 end
 
 BT.NotDecorator = NotDecorator
@@ -449,13 +467,13 @@ local FailIfRunningDecorator = class("FailIfRunningDecorator", DecoratorNode, fu
 end)
 
 function FailIfRunningDecorator:Visit()
-	local child = self.children[1]
-	child:Visit()
-	if child.status == RUNNING then
-		self.status = FAILED
-	else
-		self.status = child.status
-	end
+    local child = self.children[1]
+    child:Visit()
+    if child.status == RUNNING then
+        self.status = FAILED
+    else
+        self.status = child.status
+    end
 end
 
 BT.FailIfRunningDecorator = FailIfRunningDecorator
@@ -729,7 +747,7 @@ function ParallelNode:Visit()
     for idx, child in ipairs(self.children) do
         
         -- if child:is_a(ConditionNode) then
-        if BT.iskindof(child, "ConditionNode") then
+        if BT.iskindof(child, "ConditionNode") or BT.iskindof(child, "NotDecorator") then
             child:Reset()
         end
         
