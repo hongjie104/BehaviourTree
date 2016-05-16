@@ -58,10 +58,17 @@ function BehaviourTree:ForceUpdate()
 end
 
 function BehaviourTree:Update()
+    local sleeptime = self.root:GetTreeSleepTime()
 
-    self.root:Visit()
-    self.root:SaveStatus()
-    self.root:Step()
+    if sleeptime and sleeptime > 0 then
+        print("BehaviourTree:Update", sleeptime)
+    end
+
+    if not sleeptime or sleeptime == 0 then
+        self.root:Visit()
+        self.root:SaveStatus()
+        self.root:Step()
+    end
 
     self.forceupdate = false
 end
@@ -72,6 +79,14 @@ end
 
 function BehaviourTree:Stop()
     self.root:Stop()
+end
+
+function BehaviourTree:Suspend()
+    self.root:Suspend()
+end
+
+function BehaviourTree:Restart()
+    self.root:Restart()
 end
 
 function BehaviourTree:GetSleepTime()
@@ -242,6 +257,22 @@ function BehaviourNode:Stop()
     end
 end
 
+function BehaviourNode:Suspend()
+    if self.children then
+        for k,v in pairs(self.children) do
+            v:Suspend()
+        end
+    end
+end
+
+function BehaviourNode:Restart()
+    if self.children then
+        for k,v in pairs(self.children) do
+            v:Restart()
+        end
+    end
+end
+
 BT.BehaviourNode = BehaviourNode
 
 ---------------------------------------------------------------------------------------
@@ -328,7 +359,8 @@ function WaitNode:Visit()
         if current_time >= self.wake_time then
             self.status = SUCCESS
         else
-            self:Sleep(current_time - self.wake_time)
+            -- self:Sleep(current_time - self.wake_time)
+            self:Sleep(self.wake_time - current_time)
         end
     end
     
@@ -480,6 +512,24 @@ BT.FailIfRunningDecorator = FailIfRunningDecorator
 
 ---------------------------------------------------------------------------------------
 
+local RunningIfFailDecorator = class("RunningIfFailDecorator", DecoratorNode, function(child)
+    return DecoratorNode.__create(child)
+end)
+
+function RunningIfFailDecorator:Visit()
+    local child = self.children[1]
+    child:Visit()
+    if child.status == FAILED then
+        self.status = RUNNING
+    else
+        self.status = child.status
+    end
+end
+
+BT.RunningIfFailDecorator = RunningIfFailDecorator
+
+---------------------------------------------------------------------------------------
+
 local LoopNode = class("LoopNode", BehaviourNode, function(children, maxreps)
     local instance = BehaviourNode.__create(children)
     instance.idx = 1
@@ -542,8 +592,24 @@ BT.LoopNode = LoopNode
 
 ---------------------------------------------------------------------------------------
 
-local RandomNode = class("RandomNode", BehaviourNode, function(children)
-    return BehaviourNode.__create(children)
+local RandomNode = class("RandomNode", BehaviourNode, function(children, weights)
+    local instance = BehaviourNode.__create(children)
+    if weights then
+        -- self._weights = weights
+        instance._weights = {}
+        instance._weight_sum = 0
+
+        for i = 1, #children do
+            table.insert(instance._weights, weights[i] or 1)
+            instance._weight_sum = instance._weight_sum + (weights[i] or 1)
+        end
+
+        -- for i, v in ipairs(weights) do
+
+        --     self._weight_sum = self._weight_sum + v
+        -- end
+    end
+    return instance
 end)
 
 function RandomNode:Reset()
@@ -558,7 +624,18 @@ function RandomNode:Visit()
 -- TODO bianchx:随机节点并不应该保证随机到的节点应该是Success
     
     if not self.idx and self.children then
-        self.idx = math.random(#self.children)
+        if not self._weights then
+            self.idx = math.random(#self.children)
+        else
+            local index = math.random(self._weight_sum)
+            for i,v in ipairs(self._weights) do
+                if v >= index then
+                    self.idx = i
+                    break
+                end
+                index = index - v
+            end
+        end
     end
 
     if self.idx then
@@ -773,6 +850,14 @@ function ParallelNode:Visit()
     else
         self.status = RUNNING
     end    
+end
+
+function ParallelNode:GetSleepTime()
+    return 0
+end
+
+function ParallelNode:GetTreeSleepTime()
+    return 0
 end
 
 BT.ParallelNode = ParallelNode

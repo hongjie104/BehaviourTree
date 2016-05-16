@@ -176,19 +176,19 @@ assert(node_wait.status == RUNNING, "BT.ConditionWaitNode Should Be RUNNING")
 
 ----------------------------------------------------------------------------
 
-start = os.clock()
-local node = BT.WaitNode:create(1)
+-- start = os.clock()
+-- local node = BT.WaitNode:create(1)
 
-testtype = "BT.WaitNode"
-print("Test Start\t" .. testtype)
+-- testtype = "BT.WaitNode"
+-- print("Test Start\t" .. testtype)
 
-while node.status == RUNNING or node.status == READY do
-node:Visit()
-end
+-- while node.status == RUNNING or node.status == READY do
+-- node:Visit()
+-- end
 
-print("Test Ended \t" .. testtype .. "\n")
+-- print("Test Ended \t" .. testtype .. "\n")
 
-assert(os.clock() - start >= 1, "BT.WaitNode WaitTime Must Big Than 1")
+-- assert(os.clock() - start >= 1, "BT.WaitNode WaitTime Must Big Than 1")
 
 ----------------------------------------------------------------------------
 
@@ -549,6 +549,123 @@ end
 testSetOwner(node)
 
 -- assert(_time == _should_time, "BT.BehaviourNode:SetOwner")
+
+----------------------------------------------------------------------------
+
+testtype = "BT.RandomNode"
+print("Test Start\t" .. testtype)
+
+local random_1 = 0
+local random_2 = 0
+local random_3 = 0
+
+local node = BT.RandomNode:create({
+	BT.ActionNode:create(function()
+		random_1 = random_1 + 1
+	end),
+	BT.ActionNode:create(function()
+		random_2 = random_2 + 1
+	end),
+	BT.ActionNode:create(function()
+		random_3 = random_3 + 1
+	end),
+}, {20, 30, 50})
+
+local tree = BT.BehaviourTree:create(node)
+
+local startTime = BT.GetTime()
+local lasttime = BT.GetTime()
+
+local allCount = 0
+while true do
+	if BT.GetTime() - lasttime > 0.001 then
+		lasttime = BT.GetTime()
+
+		allCount = allCount + 1
+
+		tree:Update()
+		if BT.GetTime() - startTime > 2 then
+			break
+		end
+	end
+end
+
+assert(node._weights, "RandomNode must be weights")
+assert(#node._weights == 3, "RandomNode weights count == 3")
+assert(node._weights[1] == 20, "RandomNode weights[1] must == 20")
+assert(node._weights[2] == 30, "RandomNode weights[2] must == 30")
+assert(node._weights[3] == 50, "RandomNode weights[3] must == 50")
+
+print("1, 2, 3", random_1 / allCount, random_2 / allCount, random_3 / allCount)
+
+print("Test Ended \t" .. testtype .. "\n")
+
+----------------------------------------------------------------------------
+
+testtype = "BT.RandomNode Branch:No weights"
+print("Test Start\t" .. testtype)
+
+local random_1 = 0
+local random_2 = 0
+local random_3 = 0
+
+local node = BT.SequenceNode:create({
+	BT.RandomNode:create({
+		BT.ActionNode:create(function()
+			random_1 = random_1 + 1
+		end),
+		BT.ActionNode:create(function()
+			random_2 = random_2 + 1
+		end),
+		BT.ActionNode:create(function()
+			random_3 = random_3 + 1
+		end),
+	}),
+})
+
+local tree = BT.BehaviourTree:create(node)
+
+local startTime = BT.GetTime()
+local lasttime = BT.GetTime()
+
+local allCount = 0
+while true do
+	if BT.GetTime() - lasttime > 0.001 then
+		lasttime = BT.GetTime()
+
+		allCount = allCount + 1
+
+		tree:Update()
+		if BT.GetTime() - startTime > 2 then
+			break
+		end
+	end
+end
+
+print("1, 2, 3", random_1 / allCount, random_2 / allCount, random_3 / allCount)
+assert(not node._weights, "RandomNode must be no weights")
+
+print("Test Ended \t" .. testtype .. "\n")
+
+----------------------------------------------------------------------------
+
+testtype = "BT.RandomNode"
+print("Test Start\t" .. testtype)
+
+local node = BT.RandomNode:create({
+	BT.SequenceNode:create(),
+	BT.SequenceNode:create(),
+	BT.SequenceNode:create(),
+}, {2})
+
+assert(node._weights, "RandomNode must be weights")
+assert(#node._weights == 3, "RandomNode weights count == 3")
+assert(node._weights[1] == 2, "RandomNode weights[1] must == 2")
+assert(node._weights[2] == 1, "RandomNode weights[2] must == 1")
+assert(node._weights[3] == 1, "RandomNode weights[3] must == 1")
+
+print("Test Ended \t" .. testtype .. "\n")
+
 
 ----------------------------------------------------------------------------
 
