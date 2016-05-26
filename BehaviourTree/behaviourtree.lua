@@ -97,6 +97,10 @@ function BehaviourTree:GetSleepTime()
     return self.root:GetTreeSleepTime()
 end
 
+function BehaviourTree:OnEnter()
+    self.root:OnEnter()
+end
+
 function BehaviourTree:__tostring()
     return self.root:GetTreeString()
 end
@@ -269,6 +273,14 @@ function BehaviourNode:Restart()
     if self.children then
         for k,v in pairs(self.children) do
             v:Restart()
+        end
+    end
+end
+
+function BehaviourNode:OnEnter()
+    if self.children then
+        for k,v in pairs(self.children) do
+            v:OnEnter()
         end
     end
 end
