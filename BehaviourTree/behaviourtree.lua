@@ -340,7 +340,7 @@ local ActionNode = class("ActionNode", BehaviourNode, function(action)
 end)
 
 function ActionNode:Visit()
-    self.action()
+    self.action(self)
     self.status = SUCCESS
 end
 
