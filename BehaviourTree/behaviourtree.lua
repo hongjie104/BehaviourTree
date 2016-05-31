@@ -395,7 +395,7 @@ end
 
 function SequenceNode:Reset()
     -- self._base.Reset(self)
-    -- self.super.Reset(self)
+    -- BehaviourNode.Reset(self)
 
     if self.status ~= READY then
         self.status = READY
@@ -447,7 +447,7 @@ end
 
 function SelectorNode:Reset()
     -- self._base.Reset(self)
-    -- self.super.Reset(self)
+    -- BehaviourNode.Reset(self)
     
     if self.status ~= READY then
         self.status = READY
@@ -557,7 +557,7 @@ end
 
 function LoopNode:Reset()
     -- self._base.Reset(self)
-    self.super.Reset(self)
+    BehaviourNode.Reset(self)
     self.idx = 1
     self.rep = 0
 end
@@ -626,7 +626,7 @@ end)
 
 function RandomNode:Reset()
     -- self._base.Reset(self)
-    self.super.Reset(self)
+    BehaviourNode.Reset(self)
     self.idx = nil
 end
 
@@ -745,7 +745,7 @@ BT.RandomNode = RandomNode
 
 
 -- function PriorityNode:Reset()
---     self.super.Reset(self)
+--     BehaviourNode.Reset(self)
 --     self.idx = nil
 -- end
 
@@ -948,7 +948,7 @@ BT.ParallelNode = ParallelNode
 -- function EventNode:Reset()
 --     self.triggered = false
 --    -- self._base.Reset(self)
---     self.super.Reset(self)
+--     BehaviourNode.Reset(self)
 -- end
 
 -- function EventNode:Visit()
