@@ -669,4 +669,38 @@ print("Test Ended \t" .. testtype .. "\n")
 
 ----------------------------------------------------------------------------
 
+local node = BT.WeightSelectNode:create({
+	BT.SequenceNode:create({
+		BT.ActionNode:create(function() print("ActionNode 1") end),
+		BT.ConditionNode:create(function() return false end),
+	}),	
+	BT.SequenceNode:create({
+		BT.ActionNode:create(function() print("ActionNode 2") end),
+		BT.ConditionNode:create(function() return false end),
+	}),	
+	BT.SequenceNode:create({
+		BT.ActionNode:create(function() print("ActionNode 3") end),
+		BT.ConditionNode:create(function() return false end),
+	}),	
+	BT.SequenceNode:create({
+		BT.ActionNode:create(function() print("ActionNode 4") end),
+		BT.ConditionNode:create(function() return false end),
+	}),	
+},
+{
+	0, 
+	function()
+		return math.random(3)
+	end,
+	2,
+	1
+})
+
+for i=1,10 do
+	node:Visit()
+	print("--------")
+end
+
+----------------------------------------------------------------------------
+
 print "Test Finish"

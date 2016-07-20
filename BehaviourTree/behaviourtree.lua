@@ -989,4 +989,67 @@ BT.IfNode = IfNode
 
 ---------------------------------------------------------------
 
+local WeightSelectNode = class("WeightSelectNode", BehaviourNode, function(children, weights)
+    local instance = BehaviourNode.__create(children)
+    instance.idx = 1
+    for i = 1, #children do
+        children[i].__weight = (type(weights[i]) == "function" or type(weights[i]) == "number") and weights[i] or 0
+    end
+    return instance
+end)
+
+function WeightSelectNode:DBString()
+    return tostring(self.idx)
+end
+
+
+function WeightSelectNode:Reset()
+    -- self._base.Reset(self)
+    -- BehaviourNode.Reset(self)
+    
+    if self.status ~= READY then
+        self.status = READY
+        if self.children then
+            for idx, child in ipairs(self.children) do
+                child:Reset()
+            end
+        end
+    end
+    self.idx = 1
+end
+
+function WeightSelectNode:Visit()
+    
+    if self.status ~= RUNNING then
+        self.idx = 1
+    end
+
+    for i,v in ipairs(self.children) do
+        v.__weight_num = type(v.__weight) == "function" and v.__weight() or v.__weight or 0
+    end
+
+    table.sort(self.children, function(a, b)
+        return a.__weight_num > b.__weight_num
+    end)
+    
+    local done = false
+    while self.idx <= #self.children do
+    
+        local child = self.children[self.idx]
+        child:Visit()
+        if child.status == RUNNING or child.status == SUCCESS then
+            self.status = child.status
+            return
+        end
+        
+        self.idx = self.idx + 1
+    end 
+    
+    self.status = FAILED
+end
+
+BT.WeightSelectNode = WeightSelectNode
+
+---------------------------------------------------------------
+
 return BT
