@@ -990,6 +990,7 @@ BT.IfNode = IfNode
 ---------------------------------------------------------------
 
 local WeightSelectNode = class("WeightSelectNode", BehaviourNode, function(children, weights)
+    weights = weights or {}
     local instance = BehaviourNode.__create(children)
     instance.idx = 1
     for i = 1, #children do
@@ -1022,15 +1023,15 @@ function WeightSelectNode:Visit()
     
     if self.status ~= RUNNING then
         self.idx = 1
-    end
+        
+        for i,v in ipairs(self.children) do
+            v.__weight_num = type(v.__weight) == "function" and v.__weight() or v.__weight or 0
+        end
 
-    for i,v in ipairs(self.children) do
-        v.__weight_num = type(v.__weight) == "function" and v.__weight() or v.__weight or 0
+        table.sort(self.children, function(a, b)
+            return a.__weight_num > b.__weight_num
+        end)
     end
-
-    table.sort(self.children, function(a, b)
-        return a.__weight_num > b.__weight_num
-    end)
     
     local done = false
     while self.idx <= #self.children do

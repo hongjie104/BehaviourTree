@@ -676,7 +676,8 @@ local node = BT.WeightSelectNode:create({
 	}),	
 	BT.SequenceNode:create({
 		BT.ActionNode:create(function() print("ActionNode 2") end),
-		BT.ConditionNode:create(function() return false end),
+		BT.RunningIfFailDecorator:create(BT.ConditionNode:create(function() return math.random() > 0.2 end)),
+		BT.ActionNode:create(function() print("ActionNode 2 End") end),
 	}),	
 	BT.SequenceNode:create({
 		BT.ActionNode:create(function() print("ActionNode 3") end),
@@ -693,7 +694,6 @@ local node = BT.WeightSelectNode:create({
 		return math.random(3)
 	end,
 	2,
-	1
 })
 
 for i=1,10 do
